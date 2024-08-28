@@ -15,8 +15,7 @@ class Player {
   }
 
   recoverHealth() {
-    this.hp += 40; // 체력 회복량
-    if (this.hp > 100) this.hp = 100; // 체력이 100을 넘지 않도록 조정
+    this.hp = Math.min(this.hp + 40, 100); // 체력 회복량 및 최대 체력 조정
   }
 
   increaseAttackPower() {
@@ -28,9 +27,9 @@ class Player {
 
 class Monster {
   constructor(stage) {
-    this.hp = 100 + (stage * 10); // 스테이지가 올라갈수록 몬스터의 체력 증가
-    this.minAttackPower = 5; // 몬스터의 최소 공격력
-    this.maxAttackPower = 15 + stage; // 몬스터의 최대 공격력, 스테이지에 따라 증가
+    this.hp = 100 + (stage * 10); // 스테이지에 따른 몬스터의 체력 증가
+    this.minAttackPower = 30; // 몬스터의 최소 공격력
+    this.maxAttackPower = 40 + stage; // 몬스터의 최대 공격력
   }
 
   attack(player) {
@@ -53,17 +52,17 @@ function displayStatus(stage, player, monster) {
 const battle = async (stage, player, monster) => {
   let logs = [];
 
-  while(player.hp > 0 && monster.hp > 0) {
+  while (player.hp > 0 && monster.hp > 0) {
     console.clear();
     displayStatus(stage, player, monster);
 
-    logs.forEach((log) => console.log(log));
+    logs.forEach(log => console.log(log));
 
     console.log(chalk.green(`\n1. 공격한다 2. 도망친다`));
     const choice = readlineSync.question('당신의 선택은? ');
 
     switch (choice) {
-      case '1':
+      case '1': {
         const playerDamage = player.attack(monster);
         logs.push(chalk.green(`플레이어가 몬스터를 공격하여 ${playerDamage}의 피해를 입혔습니다.`));
 
@@ -80,6 +79,7 @@ const battle = async (stage, player, monster) => {
           return; // 플레이어가 패배하면 전투 종료
         }
         break;
+      }
 
       case '2':
         logs.push(chalk.blue('플레이어가 도망쳤습니다.'));
@@ -105,18 +105,21 @@ export async function startGame() {
       break;
     }
 
-    console.clear(); // 화면을 정리합니다
+    console.clear(); // 화면 정리
 
     console.log(chalk.green(`스테이지 ${stage} 클리어!`));
     
-    player.recoverHealth(); // 스테이지 클리어 시 체력 회복
-    const increaseAmount = player.increaseAttackPower(); // 공격력 증가
-    
-    // 회복 및 공격력 증가
-    console.log(chalk.cyan(`플레이어의 체력이 ${player.hp}로 회복되었습니다.`));
-    console.log(chalk.cyan(`플레이어의 공격력이 ${player.minAttackPower}~${player.maxAttackPower}로 증가 되었습니다.`));
-    
-    // 회복 및 공격력 증가 메세지 표시
+    // 스테이지 10이 아닐 때만 체력 회복 및 공격력 증가
+    if (stage < 10) {
+      player.recoverHealth(); // 스테이지 클리어 시 체력 회복
+      player.increaseAttackPower(); // 공격력 증가
+      
+      // 회복 및 공격력 증가
+      console.log(chalk.cyan(`플레이어의 체력이 ${player.hp}로 회복되었습니다.`));
+      console.log(chalk.cyan(`플레이어의 공격력이 ${player.minAttackPower}~${player.maxAttackPower}로 증가되었습니다.`));
+    }
+
+    // 다음 스테이지로 넘어가기 전 엔터키를 기다리기
     readlineSync.question('계속하려면 엔터를 누르세요...'); 
     
     stage++;
